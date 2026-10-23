@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -75,6 +75,9 @@ function Index() {
           <p className="mt-3 max-w-xl text-lg text-foreground/80">
             Your personal AI guide to Karnataka — tell us what you love, we'll plan every day.
           </p>
+          <Link to="/guide" className="mt-4 inline-block w-fit rounded-full border border-primary bg-background/70 px-5 py-2 text-sm font-semibold text-primary hover:bg-background">
+            Explore the Karnataka travel guide →
+          </Link>
         </div>
       </section>
 
