@@ -1,24 +1,131 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import hero from "@/assets/hero.jpg";
+import { planTrip } from "@/lib/planner.functions";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Yatra Karnataka — AI Travel Planner" },
+      { name: "description", content: "Personalised Karnataka itineraries by interest, time, budget and travel style." },
+      { property: "og:title", content: "Yatra Karnataka — AI Travel Planner" },
+      { property: "og:description", content: "Plan your Karnataka trip in seconds with AI." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+const INTERESTS = ["Heritage", "Temples", "Nature", "Wildlife", "Beaches", "Hill stations", "Food", "Coffee estates", "Adventure", "Shopping"];
+const BUDGETS = ["Budget (under ₹2k/day)", "Mid-range (₹2k–6k/day)", "Luxury (₹6k+/day)"];
+const STYLES = ["Relaxed", "Balanced", "Packed", "Family-friendly", "Solo backpacker"];
+
+const chip = (on: boolean) =>
+  `rounded-full border px-4 py-2 text-sm font-semibold transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary"}`;
+
 function Index() {
+  const [days, setDays] = useState(3);
+  const [start, setStart] = useState("Bengaluru");
+  const [budget, setBudget] = useState(BUDGETS[1]);
+  const [style, setStyle] = useState(STYLES[1]);
+  const [interests, setInterests] = useState<string[]>(["Heritage", "Food"]);
+  const [plan, setPlan] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const toggle = (i: string) =>
+    setInterests((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setPlan("");
+    const r = await planTrip({ data: { days, start, budget, style, interests } }).catch(() => ({
+      plan: "",
+      error: "Could not reach the planner. Please try again.",
+    }));
+    setLoading(false);
+    if (r.error) setError(r.error);
+    else {
+      setPlan(r.plan);
+      setTimeout(() => document.getElementById("plan")?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
+  }
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <main className="min-h-screen bg-background">
+      <section className="relative h-[60vh] min-h-[420px] overflow-hidden">
+        <img src={hero} alt="Hampi ruins at sunset" width={1600} height={912} className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+        <div className="relative mx-auto flex h-full max-w-5xl flex-col justify-end px-6 pb-12">
+          <p className="font-display text-2xl text-primary">ಯಾತ್ರೆ</p>
+          <h1 className="font-display text-5xl font-bold text-foreground md:text-7xl">Yatra Karnataka</h1>
+          <p className="mt-3 max-w-xl text-lg text-foreground/80">
+            Your personal AI guide to Karnataka — tell us what you love, we'll plan every day.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-6 pb-20">
+        <form onSubmit={submit} className="-mt-4 space-y-8 rounded-2xl border border-border bg-card p-6 shadow-xl md:p-10">
+          <div className="grid gap-6 md:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-semibold text-muted-foreground">Starting city</span>
+              <input value={start} onChange={(e) => setStart(e.target.value)} maxLength={60}
+                className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring" />
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-muted-foreground">Days: <b className="text-foreground">{days}</b></span>
+              <input type="range" min={1} max={10} value={days} onChange={(e) => setDays(+e.target.value)}
+                className="mt-5 w-full accent-primary" />
+            </label>
+          </div>
+          <Group label="Interests">
+            {INTERESTS.map((i) => (
+              <button type="button" key={i} onClick={() => toggle(i)} className={chip(interests.includes(i))}>{i}</button>
+            ))}
+          </Group>
+          <Group label="Budget">
+            {BUDGETS.map((b) => (
+              <button type="button" key={b} onClick={() => setBudget(b)} className={chip(budget === b)}>{b}</button>
+            ))}
+          </Group>
+          <Group label="Travel style">
+            {STYLES.map((s) => (
+              <button type="button" key={s} onClick={() => setStyle(s)} className={chip(style === s)}>{s}</button>
+            ))}
+          </Group>
+          <button disabled={loading}
+            className="w-full rounded-xl bg-primary py-4 text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
+            {loading ? "Planning your journey…" : "Plan my trip"}
+          </button>
+          {error && <p className="rounded-lg bg-destructive/10 p-3 text-destructive">{error}</p>}
+        </form>
+
+        {plan && (
+          <article id="plan" className="plan mt-12 rounded-2xl border border-border bg-card p-6 md:p-10">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="!m-0 font-display text-3xl">Your itinerary</h2>
+              <button onClick={() => window.print()} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-muted">Print</button>
+            </div>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{plan}</ReactMarkdown>
+          </article>
+        )}
+      </section>
+      <footer className="pb-8 text-center text-sm text-muted-foreground">Made for Kannada Digital Innovation Hackathon 2026 · ನಮ್ಮ ಕರ್ನಾಟಕ</footer>
+    </main>
+  );
+}
+
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-3 text-sm font-semibold text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
