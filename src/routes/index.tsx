@@ -4,6 +4,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import hero from "@/assets/hero.jpg";
 import { planTrip } from "@/lib/planner.functions";
+import { PLACES } from "@/lib/places";
+import { affordableDays, leftover } from "@/lib/budget";
+import { TripMap, type Stop } from "@/components/TripMap";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +23,6 @@ export const Route = createFileRoute("/")({
 });
 
 const INTERESTS = ["Heritage", "Temples", "Nature", "Wildlife", "Beaches", "Hill stations", "Food", "Coffee estates", "Adventure", "Shopping"];
-const PLACES = ["Bengaluru", "Mysuru", "Mangaluru", "Hubballi", "Belagavi", "Hampi", "Hosapete", "Kalaburagi", "Ballari", "Vijayapura", "Badami", "Chikkamagaluru", "Coorg (Madikeri)", "Udupi", "Gokarna", "Karwar", "Shivamogga", "Hassan", "Davanagere", "Chitradurga", "Tumakuru", "Dandeli", "Sakleshpur", "Murudeshwar", "Bidar"];
 const BUDGETS = ["Budget (under ₹2k/day)", "Mid-range (₹2k–6k/day)", "Luxury (₹6k+/day)"];
 const STYLES = ["Relaxed", "Balanced", "Packed", "Family-friendly", "Solo backpacker"];
 
@@ -35,6 +37,7 @@ function Index() {
   const [style, setStyle] = useState(STYLES[1]);
   const [interests, setInterests] = useState<string[]>(["Heritage", "Food"]);
   const [plan, setPlan] = useState("");
+  const [stops, setStops] = useState<Stop[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -46,14 +49,17 @@ function Index() {
     setLoading(true);
     setError("");
     setPlan("");
+    setStops([]);
     const r = await planTrip({ data: { days, start, end, budget, style, interests } }).catch(() => ({
       plan: "",
+      stops: [] as Stop[],
       error: "Could not reach the planner. Please try again.",
     }));
     setLoading(false);
     if (r.error) setError(r.error);
     else {
       setPlan(r.plan);
+      setStops(r.stops);
       setTimeout(() => document.getElementById("plan")?.scrollIntoView({ behavior: "smooth" }), 50);
     }
   }
@@ -105,6 +111,10 @@ function Index() {
           {error && <p className="rounded-lg bg-destructive/10 p-3 text-destructive">{error}</p>}
         </form>
 
+        <BudgetCalc onUse={setDays} />
+
+        {stops.length > 0 && <TripMap stops={stops} />}
+
         {plan && (
           <article id="plan" className="plan mt-12 rounded-2xl border border-border bg-card p-6 md:p-10">
             <div className="flex items-center justify-between gap-4">
@@ -138,5 +148,34 @@ function PlaceSelect({ label, value, onChange }: { label: string; value: string;
         {PLACES.map((p) => <option key={p} value={p}>{p}</option>)}
       </select>
     </label>
+  );
+}
+
+function BudgetCalc({ onUse }: { onUse: (d: number) => void }) {
+  const [total, setTotal] = useState(15000);
+  const [perDay, setPerDay] = useState(3000);
+  const d = affordableDays(total, perDay);
+  const field = "mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring";
+  return (
+    <section className="mt-12 rounded-2xl border border-border bg-card p-6 md:p-10">
+      <h2 className="font-display text-2xl">Budget calculator</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Enter your total budget and daily spend to see how many days you can afford.</p>
+      <div className="mt-6 grid gap-6 md:grid-cols-3 md:items-end">
+        <label className="block"><span className="text-sm font-semibold text-muted-foreground">Total budget (₹)</span>
+          <input type="number" min={0} value={total} onChange={(e) => setTotal(+e.target.value)} className={field} /></label>
+        <label className="block"><span className="text-sm font-semibold text-muted-foreground">Spend per day (₹)</span>
+          <input type="number" min={0} value={perDay} onChange={(e) => setPerDay(+e.target.value)} className={field} /></label>
+        <div className="rounded-xl bg-muted p-4">
+          <p className="font-display text-4xl text-primary">{d} {d === 1 ? "day" : "days"}</p>
+          <p className="text-sm text-muted-foreground">₹{leftover(total, perDay).toLocaleString("en-IN")} left over</p>
+        </div>
+      </div>
+      {d > 0 && (
+        <button type="button" onClick={() => { onUse(Math.min(10, d)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          className="mt-4 rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-muted">
+          Use {Math.min(10, d)} days in my plan
+        </button>
+      )}
+    </section>
   );
 }
