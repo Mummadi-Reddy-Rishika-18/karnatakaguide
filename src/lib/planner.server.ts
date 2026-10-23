@@ -10,7 +10,7 @@ export type PlanInput = {
 };
 
 export async function generatePlan(input: PlanInput): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI is not configured.");
   let runId: string | undefined;
   const openai = createOpenAI({
