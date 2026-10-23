@@ -7,6 +7,7 @@ const schema = z.object({
   interests: z.array(z.string().max(40)).max(10),
   style: z.string().max(40),
   start: z.string().max(60),
+  end: z.string().max(60),
 });
 
 export const planTrip = createServerFn({ method: "POST" })
