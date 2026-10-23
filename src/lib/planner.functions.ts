@@ -15,8 +15,8 @@ export const planTrip = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { generatePlan } = await import("./planner.server");
     try {
-      return { plan: await generatePlan(data), error: null as string | null };
+      return { ...(await generatePlan(data)), error: null as string | null };
     } catch (e) {
-      return { plan: "", error: e instanceof Error ? e.message : "Something went wrong." };
+      return { plan: "", stops: [], error: e instanceof Error ? e.message : "Something went wrong." };
     }
   });

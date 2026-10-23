@@ -10,7 +10,7 @@ export type PlanInput = {
   end: string;
 };
 
-export async function generatePlan(input: PlanInput): Promise<string> {
+export async function generatePlan(input: PlanInput): Promise<{ plan: string; stops: { day: number; name: string; lat: number; lng: number }[] }> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI is not configured.");
   let runId: string | undefined;
@@ -36,7 +36,7 @@ export async function generatePlan(input: PlanInput): Promise<string> {
   const result = streamText({
     model: openai.responses("openai/gpt-6-astra"),
     system:
-      "You are an expert Karnataka travel planner. Write in Markdown. Produce a day-by-day itinerary for Karnataka only. For each day use a '## Day N — Title' heading, then Morning / Afternoon / Evening bullets with specific real places, travel times between them, a local food to try, and an estimated cost in INR. Include one useful Kannada phrase per day (Kannada script, transliteration, meaning). End with '## Budget summary' (table) and '## Tips' (best season, transport, etiquette). Be realistic about distances.",
+      "You are an expert Karnataka travel planner. Write in Markdown. Produce a day-by-day itinerary for Karnataka only. For each day use a '## Day N — Title' heading, then Morning / Afternoon / Evening bullets with specific real places, travel times between them, a local food to try, and an estimated cost in INR. Include one useful Kannada phrase per day (Kannada script, transliteration, meaning). End with '## Budget summary' (table) and '## Tips' (best season, transport, etiquette). Be realistic about distances. After the Markdown, output a line containing only STOPS_JSON followed by a JSON array of every visited stop in visiting order: [{\"day\":1,\"name\":\"Mysore Palace\",\"lat\":12.3052,\"lng\":76.6552}]. Use accurate coordinates.",
     prompt: `Trip: ${input.days} days starting from ${input.start || "Bengaluru"} and ending at ${input.end || input.start || "Bengaluru"}. Route the trip logically from start to end. Budget: ${input.budget}. Interests: ${input.interests.join(", ") || "a mix"}. Travel style: ${input.style}.`,
     providerOptions: {
       openai: {
@@ -48,5 +48,16 @@ export async function generatePlan(input: PlanInput): Promise<string> {
       },
     },
   });
-  return await result.text;
+  const text = await result.text;
+  const idx = text.lastIndexOf("STOPS_JSON");
+  if (idx < 0) return { plan: text, stops: [] };
+  let stops: { day: number; name: string; lat: number; lng: number }[] = [];
+  try {
+    const raw = text.slice(idx + 10).replace(/```(json)?/g, "").trim();
+    const arr = JSON.parse(raw.slice(raw.indexOf("["), raw.lastIndexOf("]") + 1));
+    stops = (Array.isArray(arr) ? arr : [])
+      .filter((s) => typeof s?.lat === "number" && typeof s?.lng === "number" && s.lat > 11 && s.lat < 19 && s.lng > 73 && s.lng < 79)
+      .map((s) => ({ day: Number(s.day) || 1, name: String(s.name ?? "").slice(0, 80), lat: s.lat, lng: s.lng }));
+  } catch { /* map optional */ }
+  return { plan: text.slice(0, idx).replace(/```\s*$/, "").trim(), stops };
 }
