@@ -7,6 +7,7 @@ export type PlanInput = {
   interests: string[];
   style: string;
   start: string;
+  end: string;
 };
 
 export async function generatePlan(input: PlanInput): Promise<string> {
@@ -36,7 +37,7 @@ export async function generatePlan(input: PlanInput): Promise<string> {
     model: openai.responses("openai/gpt-6-astra"),
     system:
       "You are an expert Karnataka travel planner. Write in Markdown. Produce a day-by-day itinerary for Karnataka only. For each day use a '## Day N — Title' heading, then Morning / Afternoon / Evening bullets with specific real places, travel times between them, a local food to try, and an estimated cost in INR. Include one useful Kannada phrase per day (Kannada script, transliteration, meaning). End with '## Budget summary' (table) and '## Tips' (best season, transport, etiquette). Be realistic about distances.",
-    prompt: `Trip: ${input.days} days starting from ${input.start || "Bengaluru"}. Budget: ${input.budget}. Interests: ${input.interests.join(", ") || "a mix"}. Travel style: ${input.style}.`,
+    prompt: `Trip: ${input.days} days starting from ${input.start || "Bengaluru"} and ending at ${input.end || input.start || "Bengaluru"}. Route the trip logically from start to end. Budget: ${input.budget}. Interests: ${input.interests.join(", ") || "a mix"}. Travel style: ${input.style}.`,
     providerOptions: {
       openai: {
         forceReasoning: true,

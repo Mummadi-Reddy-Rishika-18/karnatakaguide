@@ -20,6 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 const INTERESTS = ["Heritage", "Temples", "Nature", "Wildlife", "Beaches", "Hill stations", "Food", "Coffee estates", "Adventure", "Shopping"];
+const PLACES = ["Bengaluru", "Mysuru", "Mangaluru", "Hubballi", "Belagavi", "Hampi", "Hosapete", "Kalaburagi", "Ballari", "Vijayapura", "Badami", "Chikkamagaluru", "Coorg (Madikeri)", "Udupi", "Gokarna", "Karwar", "Shivamogga", "Hassan", "Davanagere", "Chitradurga", "Tumakuru", "Dandeli", "Sakleshpur", "Murudeshwar", "Bidar"];
 const BUDGETS = ["Budget (under ₹2k/day)", "Mid-range (₹2k–6k/day)", "Luxury (₹6k+/day)"];
 const STYLES = ["Relaxed", "Balanced", "Packed", "Family-friendly", "Solo backpacker"];
 
@@ -29,6 +30,7 @@ const chip = (on: boolean) =>
 function Index() {
   const [days, setDays] = useState(3);
   const [start, setStart] = useState("Bengaluru");
+  const [end, setEnd] = useState("Mysuru");
   const [budget, setBudget] = useState(BUDGETS[1]);
   const [style, setStyle] = useState(STYLES[1]);
   const [interests, setInterests] = useState<string[]>(["Heritage", "Food"]);
@@ -44,7 +46,7 @@ function Index() {
     setLoading(true);
     setError("");
     setPlan("");
-    const r = await planTrip({ data: { days, start, budget, style, interests } }).catch(() => ({
+    const r = await planTrip({ data: { days, start, end, budget, style, interests } }).catch(() => ({
       plan: "",
       error: "Could not reach the planner. Please try again.",
     }));
@@ -73,11 +75,8 @@ function Index() {
       <section className="mx-auto max-w-5xl px-6 pb-20">
         <form onSubmit={submit} className="-mt-4 space-y-8 rounded-2xl border border-border bg-card p-6 shadow-xl md:p-10">
           <div className="grid gap-6 md:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-semibold text-muted-foreground">Starting city</span>
-              <input value={start} onChange={(e) => setStart(e.target.value)} maxLength={60}
-                className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring" />
-            </label>
+            <PlaceSelect label="Starting place" value={start} onChange={setStart} />
+            <PlaceSelect label="Ending place" value={end} onChange={setEnd} />
             <label className="block">
               <span className="text-sm font-semibold text-muted-foreground">Days: <b className="text-foreground">{days}</b></span>
               <input type="range" min={1} max={10} value={days} onChange={(e) => setDays(+e.target.value)}
@@ -127,5 +126,17 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
       <p className="mb-3 text-sm font-semibold text-muted-foreground">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
+  );
+}
+
+function PlaceSelect({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}
+        className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring">
+        {PLACES.map((p) => <option key={p} value={p}>{p}</option>)}
+      </select>
+    </label>
   );
 }
