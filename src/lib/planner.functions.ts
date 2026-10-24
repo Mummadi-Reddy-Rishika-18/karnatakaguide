@@ -6,6 +6,7 @@ const schema = z.object({
   budget: z.string().max(40),
   interests: z.array(z.string().max(40)).max(10),
   style: z.string().max(40),
+  transport: z.string().max(40),
   start: z.string().max(60),
   end: z.string().max(60),
 });

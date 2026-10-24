@@ -25,6 +25,7 @@ export const Route = createFileRoute("/")({
 const INTERESTS = ["Heritage", "Temples", "Nature", "Wildlife", "Beaches", "Hill stations", "Food", "Coffee estates", "Adventure", "Shopping"];
 const BUDGETS = ["Budget (under ₹2k/day)", "Mid-range (₹2k–6k/day)", "Luxury (₹6k+/day)"];
 const STYLES = ["Relaxed", "Balanced", "Packed", "Family-friendly", "Solo backpacker"];
+const TRANSPORTS = ["Train", "Bus", "Road (self-drive / taxi)"];
 
 const chip = (on: boolean) =>
   `rounded-full border px-4 py-2 text-sm font-semibold transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary"}`;
