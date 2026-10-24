@@ -36,6 +36,7 @@ function Index() {
   const [end, setEnd] = useState("Mysuru");
   const [budget, setBudget] = useState(BUDGETS[1]);
   const [style, setStyle] = useState(STYLES[1]);
+  const [transport, setTransport] = useState(TRANSPORTS[1]);
   const [interests, setInterests] = useState<string[]>(["Heritage", "Food"]);
   const [plan, setPlan] = useState("");
   const [stops, setStops] = useState<Stop[]>([]);
@@ -51,7 +52,7 @@ function Index() {
     setError("");
     setPlan("");
     setStops([]);
-    const r = await planTrip({ data: { days, start, end, budget, style, interests } }).catch(() => ({
+    const r = await planTrip({ data: { days, start, end, budget, style, transport, interests } }).catch(() => ({
       plan: "",
       stops: [] as Stop[],
       error: "Could not reach the planner. Please try again.",
@@ -106,6 +107,11 @@ function Index() {
           <Group label="Travel style">
             {STYLES.map((s) => (
               <button type="button" key={s} onClick={() => setStyle(s)} className={chip(style === s)}>{s}</button>
+            ))}
+          </Group>
+          <Group label="Getting around">
+            {TRANSPORTS.map((t) => (
+              <button type="button" key={t} onClick={() => setTransport(t)} className={chip(transport === t)}>{t}</button>
             ))}
           </Group>
           <button disabled={loading}
