@@ -51,7 +51,12 @@ export async function generatePlan(input: PlanInput): Promise<{ plan: string; st
       },
     },
   });
-  const text = await result.text;
+  let text: string;
+  try {
+    text = await result.text;
+  } catch (e) {
+    throw streamError ?? e;
+  }
   const idx = text.lastIndexOf("STOPS_JSON");
   if (idx < 0) return { plan: text, stops: [] };
   let stops: { day: number; name: string; lat: number; lng: number }[] = [];
