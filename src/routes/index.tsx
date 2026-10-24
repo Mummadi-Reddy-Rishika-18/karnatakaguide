@@ -25,6 +25,7 @@ export const Route = createFileRoute("/")({
 const INTERESTS = ["Heritage", "Temples", "Nature", "Wildlife", "Beaches", "Hill stations", "Food", "Coffee estates", "Adventure", "Shopping"];
 const BUDGETS = ["Budget (under ₹2k/day)", "Mid-range (₹2k–6k/day)", "Luxury (₹6k+/day)"];
 const STYLES = ["Relaxed", "Balanced", "Packed", "Family-friendly", "Solo backpacker"];
+const TRANSPORTS = ["Train", "Bus", "Road (self-drive / taxi)"];
 
 const chip = (on: boolean) =>
   `rounded-full border px-4 py-2 text-sm font-semibold transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary"}`;
@@ -35,6 +36,7 @@ function Index() {
   const [end, setEnd] = useState("Mysuru");
   const [budget, setBudget] = useState(BUDGETS[1]);
   const [style, setStyle] = useState(STYLES[1]);
+  const [transport, setTransport] = useState(TRANSPORTS[1]);
   const [interests, setInterests] = useState<string[]>(["Heritage", "Food"]);
   const [plan, setPlan] = useState("");
   const [stops, setStops] = useState<Stop[]>([]);
@@ -50,7 +52,7 @@ function Index() {
     setError("");
     setPlan("");
     setStops([]);
-    const r = await planTrip({ data: { days, start, end, budget, style, interests } }).catch(() => ({
+    const r = await planTrip({ data: { days, start, end, budget, style, transport, interests } }).catch(() => ({
       plan: "",
       stops: [] as Stop[],
       error: "Could not reach the planner. Please try again.",
@@ -105,6 +107,11 @@ function Index() {
           <Group label="Travel style">
             {STYLES.map((s) => (
               <button type="button" key={s} onClick={() => setStyle(s)} className={chip(style === s)}>{s}</button>
+            ))}
+          </Group>
+          <Group label="Getting around">
+            {TRANSPORTS.map((t) => (
+              <button type="button" key={t} onClick={() => setTransport(t)} className={chip(transport === t)}>{t}</button>
             ))}
           </Group>
           <button disabled={loading}
