@@ -15,6 +15,7 @@ export async function generatePlan(input: PlanInput): Promise<{ plan: string; st
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI is not configured.");
   let runId: string | undefined;
+  let streamError: Error | undefined;
   const openai = createOpenAI({
     baseURL: "https://ai.gateway.lovable.dev/v1",
     apiKey: key,
@@ -26,9 +27,10 @@ export async function generatePlan(input: PlanInput): Promise<{ plan: string; st
       runId ??= res.headers.get("X-Lovable-AIG-Run-ID") ?? undefined;
       if (!res.ok) {
         const t = await res.clone().text();
-        if (res.status === 429) throw new Error("Too many requests, please try again shortly.");
-        if (res.status === 402) throw new Error("AI credits are used up for this workspace.");
-        throw new Error(t.slice(0, 200) || `AI error ${res.status}`);
+        if (res.status === 429) streamError = new Error("Too many requests, please try again shortly.");
+        else if (res.status === 402) streamError = new Error("AI credits are used up — add credits to keep planning trips.");
+        else streamError = new Error(t.slice(0, 200) || `AI error ${res.status}`);
+        throw streamError;
       }
       return res;
     },
@@ -49,7 +51,12 @@ export async function generatePlan(input: PlanInput): Promise<{ plan: string; st
       },
     },
   });
-  const text = await result.text;
+  let text: string;
+  try {
+    text = await result.text;
+  } catch (e) {
+    throw streamError ?? e;
+  }
   const idx = text.lastIndexOf("STOPS_JSON");
   if (idx < 0) return { plan: text, stops: [] };
   let stops: { day: number; name: string; lat: number; lng: number }[] = [];
